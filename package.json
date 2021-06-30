@@ -1,0 +1,29 @@
+{
+  "name": "duolingo-traditional-chinese-chrome",
+  "version": "1.0.0",
+  "description": "Chrome extension for replacing simplified characters on duolingo with traditional characters.",
+  "scripts": {
+    "dev": "webpack --mode development --progress",
+    "prod": "webpack --mode production --progress"
+  },
+  "repository": {
+    "type": "git",
+    "url": "\"\""
+  },
+  "author": "Robert Bagott",
+  "license": "ISC",
+  "dev-dependencies": {
+    "webpack": "^5.41.1"
+  },
+  "dependencies": {
+    "chinese-s2t": "^1.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/preset-env": "^7.14.7",
+    "babel-loader": "^8.2.2",
+    "copy-webpack-plugin": "^9.0.1",
+    "webpack": "^5.41.1",
+    "webpack-cli": "^4.7.2"
+  }
+}

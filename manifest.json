@@ -1,0 +1,11 @@
+{
+  "name": "Getting started example",
+  "description": "Build an extension!",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["tabs", "scripting"],
+  "content_scripts": [{
+    "matches": ["https://www.duolingo.com/*"],
+    "js": ["main.js"]
+  }]
+}
