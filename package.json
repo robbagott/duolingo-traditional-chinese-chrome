@@ -8,9 +8,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "\"\""
+    "url": "https://github.com/robbagott/duolingo-traditional-chinese-chrome.git"
   },
-  "author": "Robert Bagott",
+  "keywords": [
+    "duolingo",
+    "chinese",
+    "traditional",
+    "characters",
+    "chrome",
+    "extension"
+  ],
+  "author": "Robert Bagott <robbagott@gmail.com>",
   "license": "ISC",
   "dev-dependencies": {
     "webpack": "^5.41.1"
