@@ -24,7 +24,6 @@
     "webpack": "^5.41.1"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.12.1",
     "chinese-s2t": "^1.0.0"
   },
   "devDependencies": {
