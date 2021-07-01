@@ -12,8 +12,14 @@ if (!window.duolingoTraditionalChineseExtensionTipsRunning) {
 function runExtension() {
   console.log('tips running');
 
-  setInterval(() => {
-    replaceSimplifiedChars(document.body);
+  let interval = setInterval(() => {
+    if (window.location.href.includes('tips')) {
+      replaceSimplifiedChars(document.body);
+    } else {
+      console.log('tips no longer running');
+      window.duolingoTraditionalChineseExtensionTipsRunning = false;
+      clearInterval(interval);
+    }
   }, 1000);
 };
 

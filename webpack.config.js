@@ -4,7 +4,8 @@ const CopyPlugin = require('copy-webpack-plugin');
 module.exports = {
   entry: {
     lesson: path.resolve(__dirname, 'src', 'content_scripts', 'lesson.js'),
-    tips: path.resolve(__dirname, 'src', 'content_scripts', 'tips.js')
+    tips: path.resolve(__dirname, 'src', 'content_scripts', 'tips.js'),
+    overlays: path.resolve(__dirname, 'src', 'content_scripts', 'overlays.js')
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

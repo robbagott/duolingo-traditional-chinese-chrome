@@ -8,26 +8,6 @@ export {
   monitorObserverHealth
 };
 
-//function setMutationObserver(selector) {
-//  console.log('resetting observer');
-//  awaitElement('[data-test~=challenge]').then(elem => {
-//    const challengeParent = elem.parentNode.parentNode;
-//
-//    const observer = new MutationObserver((mutations, observer) => {
-//      const nodesAdded = mutations.some(mutation => mutation.addedNodes.length > 0);
-//      if (nodesAdded) {
-//        observer.disconnect();
-//        observer.takeRecords();
-//        replaceSimplifiedChars(challengeParent);
-//        observe(observer, challengeParent);
-//      }
-//    });
-//
-//    observe(observer, challengeParent);
-//    monitorObserverHealth(challengeParent).catch(err => runExtension());
-//  }); 
-//}
-
 function observe(observer, node) {
   observer.observe(node, {
     subtree: true,
@@ -61,12 +41,27 @@ function getElement(selector) {
 }
 
 function replaceSimplifiedChars(node) {
-  const elements = node.querySelectorAll('span, div');
+  const elements = getLeafNodes(node);
   elements.forEach((elem) => {
     if (elem.children.length === 0) {
       elem.innerHTML = Chinese.s2t(elem.innerHTML);
     }
   });
+}
+
+function getLeafNodes(node) {
+  if (node.tagName === 'script') {
+    return [];
+  }
+  if (!node.children || !node.children.length) {
+    return [node];
+  } else {
+    let leaves = [];
+    for (let i = 0; i < node.children.length; i++) { 
+      leaves = leaves.concat(getLeafNodes(node.children[i]));
+    };
+    return leaves;
+  }
 }
 
 function monitorObserverHealth(elem) {
