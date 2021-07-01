@@ -1,7 +1,5 @@
 import Chinese from 'chinese-s2t';
 
-console.log("experiment injected. Am I running?: ", window.duolingoTraditionalChineseExtensionLessonRunning);
-
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user click the back button in the browser.
 if (!window.duolingoTraditionalChineseExtensionRunning) {
@@ -22,6 +20,7 @@ function setMutationObserver() {
       if (mut.addedNodes) {
         for (let i = 0; i < mut.addedNodes.length; i++) {
           replaceSimplifiedChars(mut.addedNodes[i]);
+          attachNextButtonListener(mut.addedNodes[i]);
         }
       }
     });
@@ -60,3 +59,18 @@ function getLeafNodes(node) {
     return leaves;
   }
 }
+
+function attachNextButtonListener(node) {
+  if (node.tagName === 'button' && node['data-test'] === 'player-next') {
+    node.addEventListener('mouseup', () => {
+      const textarea = document.querySelector('textarea[data-test=challenge-translate-input]');
+      
+      const simplified = Chinese.t2s(textarea.value)
+      if (textarea.value !== simplified) {
+        textarea.value = simplified;
+      }
+    });
+  }
+}
+
+
