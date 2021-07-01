@@ -3,9 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    lesson: path.resolve(__dirname, 'src', 'content_scripts', 'lesson.js'),
-    tips: path.resolve(__dirname, 'src', 'content_scripts', 'tips.js'),
-    overlays: path.resolve(__dirname, 'src', 'content_scripts', 'overlays.js')
+    main: path.resolve(__dirname, 'src', 'content_scripts', 'main.js')
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -24,11 +22,11 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'manifest.json'),
+          from: path.resolve(__dirname, 'src/manifest.json'),
           to: path.resolve(__dirname, "dist")
         },
         {
-          from: path.resolve(__dirname, 'src', 'background.js'),
+          from: path.resolve(__dirname, 'src', 'service_workers', 'background.js'),
           to: path.resolve(__dirname, 'dist')
         }
       ]
