@@ -17,6 +17,14 @@ import Chinese from 'chinese-s2t';
         leaf.innerHTML = Chinese.s2t(leaf.innerHTML);
       });
     });
+
+    const prompts = document.querySelectorAll('[data-test="challenge-translate-prompt"]');
+
+    prompts.forEach((node) => {
+      getLeafNodes(node).forEach((leaf) => {
+        leaf.innerHTML = Chinese.s2t(leaf.innerHTML);
+      });
+    });
   }
 
   function getLeafNodes(node) {

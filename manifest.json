@@ -1,6 +1,6 @@
 {
-  "name": "Getting started example",
-  "description": "Build an extension!",
+  "name": "Duolingo Traditional Chinese",
+  "description": "When active, converts simplified Chinese characters to traditional Chinese characters during Duolingo lessons.",
   "version": "1.0",
   "manifest_version": 3,
   "permissions": ["tabs", "scripting"],
