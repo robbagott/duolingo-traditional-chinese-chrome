@@ -1,10 +1,15 @@
-const path = require("path");
-const CopyPlugin = require("copy-webpack-plugin");
+const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  entry: [
-    path.resolve(__dirname, 'src', 'index.js')
-  ],
+  entry: {
+    lesson: path.resolve(__dirname, 'src', 'content_scripts', 'lesson.js'),
+    tips: path.resolve(__dirname, 'src', 'content_scripts', 'tips.js')
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].js'
+  },
   module: {
     rules: [
       {
@@ -18,12 +23,12 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, "manifest.json"),
+          from: path.resolve(__dirname, 'manifest.json'),
           to: path.resolve(__dirname, "dist")
         },
         {
-          from: path.resolve(__dirname, "background.js"),
-          to: path.resolve(__dirname, "dist")
+          from: path.resolve(__dirname, 'src', 'background.js'),
+          to: path.resolve(__dirname, 'dist')
         }
       ]
     })
