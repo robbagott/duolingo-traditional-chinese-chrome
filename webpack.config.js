@@ -20,6 +20,10 @@ module.exports = {
         {
           from: path.resolve(__dirname, "manifest.json"),
           to: path.resolve(__dirname, "dist")
+        },
+        {
+          from: path.resolve(__dirname, "background.js"),
+          to: path.resolve(__dirname, "dist")
         }
       ]
     })

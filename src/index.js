@@ -1,11 +1,23 @@
 import "@babel/polyfill";
 import Chinese from 'chinese-s2t';
 
-(async () => {
+// Don't run extension if it's already running. The extension must be injected by background service
+// when the user click the back button in the browser.
+if (!window.duolingoTraditionalChineseExtensionRunning) {
+  window.duolingoTraditionalChineseExtensionRunning = true;
+  runExtension();
+}
+
+async function runExtension() {
+  // Run immediately before observing.
+  const challengeDiv = await awaitChallengeDiv(); 
+  const challengeParent = challengeDiv.parentNode.parentNode;
+  replaceSimplifiedChars(challengeParent);
+
   resetMutationObserver();
 
   async function resetMutationObserver() {
-    const challengeDiv = await awaitChallenge(); 
+    const challengeDiv = await awaitChallengeDiv(); 
     const challengeParent = challengeDiv.parentNode.parentNode;
 
     const observer = new MutationObserver(async (mutations, observer) => {
@@ -28,14 +40,14 @@ import Chinese from 'chinese-s2t';
     });
   }
 
-  async function awaitChallenge() {
+  async function awaitChallengeDiv() {
     return new Promise(resolve => {
-      const challengeDiv = getChallenge();
+      const challengeDiv = getChallengeDiv();
       if (challengeDiv) {
         resolve(challengeDiv);
       } else {
         let interval = setInterval(() => {
-          const challengeDiv = getChallenge();
+          const challengeDiv = getChallengeDiv();
           if (challengeDiv) {
             clearInterval(interval);
             resolve(challengeDiv);
@@ -45,7 +57,7 @@ import Chinese from 'chinese-s2t';
     });
   }
 
-  function getChallenge() {
+  function getChallengeDiv() {
     const challengeQuery = document.querySelectorAll('[data-test~=challenge]');
     const challengeDiv = challengeQuery.length ? challengeQuery[0] : null; 
     return challengeDiv;
@@ -59,4 +71,4 @@ import Chinese from 'chinese-s2t';
       }
     });
   }
-})();
+};

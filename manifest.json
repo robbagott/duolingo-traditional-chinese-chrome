@@ -4,6 +4,10 @@
   "version": "1.0",
   "manifest_version": 3,
   "permissions": ["tabs", "scripting"],
+  "host_permissions": ["http://*.duolingo.com/*", "https://*.duolingo.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [{
     "matches": ["https://www.duolingo.com/*"],
     "js": ["main.js"]
