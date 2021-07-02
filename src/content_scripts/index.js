@@ -1,4 +1,4 @@
-import Chinese from 'chinese-s2t';
+import ConvertChinese from 'chinese-s2t';
 
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user clicks the back button in the browser.
@@ -36,10 +36,10 @@ function setMutationObserver() {
 function replaceSimplifiedChars(node) {
   const leaves = getLeafNodes(node);
   leaves.forEach((leaf) => {
-    const converted = Chinese.s2t(leaf.innerHTML);
+    const converted = ConvertChinese.s2t(leaf.innerHTML);
     if (converted !== leaf.innerHTML) {
-      
-      leaf.innerHTML = converted;
+      leaf.innerHTML = addHoverToText(converted);
+      addHoverListeners(leaf);
     }
   });
 }
@@ -65,7 +65,7 @@ function attachNextButtonListener(node) {
     node.addEventListener('mouseup', () => {
       const textarea = document.querySelector('textarea[data-test=challenge-translate-input]');
       
-      const simplified = Chinese.t2s(textarea.value)
+      const simplified = ConvertChinese.t2s(textarea.value)
       if (textarea.value !== simplified) {
         textarea.value = simplified;
       }
@@ -73,26 +73,35 @@ function attachNextButtonListener(node) {
   }
 }
 
-// Converts Chinese characters in node to spans. Then attaches event listener to these spans which open a dictionary.
-function attachHoverDictionary(node) {
-  const leaves = getLeafNodes(node);
-  leaves.forEach(leaf => {
-    for (let i = 0; i < leaf.innerHTML.length; i++) {
-      let newHtml = '';
-      if (isChineseChar(leaf.innerHTML[i])) {
-        newHtml += createHoverDictionarySpan(c);        
-      }
+// Converts Chinese characters to spans. Then attaches event listener to these spans which open a dictionary.
+function addHoverToText(text) {
+  let newHtml = '';
+  for (let i = 0; i < text.length; i++) {
+    if (isChineseChar(text[i])) {
+      newHtml += textToSpan(text[i]);        
     }
-    leaf.innerHTML = newHtml;
-  });
+  }
+  return newHtml;
 }
 
 function isChineseChar(c) {
-  return c.match(/[\u3400-\u9FBF]/);
+  return c.match(/[\u2E80-\u2FD5\u3190-\u319f\u3400-\u4DBF\u4E00-\u9FCC\uF900-\uFAAD]/g);
 }
 
-function createHoverDictionarySpan(c) {
+function textToSpan(c) {
   const span = document.createElement('span');
   span.className = 'chinese-character';
+  span.textContent = c;
   return span.outerHTML;
+}
+
+function addHoverListeners(node) {
+  const spans = node.querySelectorAll('span');
+  for (let i = 0; i < spans.length; i++) {
+    spans[i].onHover = onHover;
+  }
+}
+
+function onHover(e) {
+  console.log('hovered!');
 }

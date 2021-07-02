@@ -24,7 +24,8 @@
     "webpack": "^5.41.1"
   },
   "dependencies": {
-    "chinese-s2t": "^1.0.0"
+    "chinese-s2t": "^1.0.0",
+    "idb": "^6.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",

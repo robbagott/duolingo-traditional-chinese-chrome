@@ -3,7 +3,8 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    main: path.resolve(__dirname, 'src', 'content_scripts', 'index.js')
+    main: path.resolve(__dirname, 'src', 'content_scripts', 'index.js'),
+    background: path.resolve(__dirname, 'src', 'service_workers', 'background.js')
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -16,6 +17,10 @@ module.exports = {
         exclude: /node_modules/,
         use: ['babel-loader'],
       },
+      {
+        test: /\.(u8)$/,
+        type: 'asset/resource'
+      }
     ]
   },
   plugins: [
@@ -24,10 +29,6 @@ module.exports = {
         {
           from: path.resolve(__dirname, 'src/manifest.json'),
           to: path.resolve(__dirname, "dist")
-        },
-        {
-          from: path.resolve(__dirname, 'src', 'service_workers', 'background.js'),
-          to: path.resolve(__dirname, 'dist')
         }
       ]
     })
