@@ -1,7 +1,7 @@
 import Chinese from 'chinese-s2t';
 
 // Don't run extension if it's already running. The extension must be injected by background service
-// when the user click the back button in the browser.
+// when the user clicks the back button in the browser.
 if (!window.duolingoTraditionalChineseExtensionRunning) {
   window.duolingoTraditionalChineseExtensionRunning = true;
   runExtension();
@@ -34,13 +34,12 @@ function setMutationObserver() {
 }
 
 function replaceSimplifiedChars(node) {
-  const elements = getLeafNodes(node);
-  elements.forEach((elem) => {
-    if (!elem.children || elem.children.length === 0) {
-      const converted = Chinese.s2t(elem.innerHTML);
-      if (converted !== elem.innerHTML) {
-        elem.innerHTML = converted;
-      }
+  const leaves = getLeafNodes(node);
+  leaves.forEach((leaf) => {
+    const converted = Chinese.s2t(leaf.innerHTML);
+    if (converted !== leaf.innerHTML) {
+      
+      leaf.innerHTML = converted;
     }
   });
 }
@@ -60,6 +59,7 @@ function getLeafNodes(node) {
   }
 }
 
+// Attaches a listener to the next button, which translates any text input into simplified Chinese before the answer is submitted.
 function attachNextButtonListener(node) {
   if (node.tagName === 'button' && node['data-test'] === 'player-next') {
     node.addEventListener('mouseup', () => {
@@ -73,4 +73,26 @@ function attachNextButtonListener(node) {
   }
 }
 
+// Converts Chinese characters in node to spans. Then attaches event listener to these spans which open a dictionary.
+function attachHoverDictionary(node) {
+  const leaves = getLeafNodes(node);
+  leaves.forEach(leaf => {
+    for (let i = 0; i < leaf.innerHTML.length; i++) {
+      let newHtml = '';
+      if (isChineseChar(leaf.innerHTML[i])) {
+        newHtml += createHoverDictionarySpan(c);        
+      }
+    }
+    leaf.innerHTML = newHtml;
+  });
+}
 
+function isChineseChar(c) {
+  return c.match(/[\u3400-\u9FBF]/);
+}
+
+function createHoverDictionarySpan(c) {
+  const span = document.createElement('span');
+  span.className = 'chinese-character';
+  return span.outerHTML;
+}
