@@ -1,6 +1,7 @@
 import ConvertChinese from 'chinese-s2t';
 import { openDB } from 'idb';
 import app from './App.js';
+import { getLeafNodes, includesChinese, getAbsoluteOffset } from '../util.js';
 
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user clicks the back button in the browser.
@@ -37,28 +38,23 @@ function setMutationObserver() {
 function replaceSimplifiedChars(node) {
   const leaves = getLeafNodes(node);
   leaves.forEach((leaf) => {
-    const converted = ConvertChinese.s2t(leaf.innerHTML);
-    if (converted !== leaf.innerHTML) {
-      leaf.innerHTML = addHoverToText(converted);
-      addHoverListeners(leaf);
+    if (leaf.innerHTML) {
+      // Convert any simplified text to traditional, only making changes if necessary.
+      const converted = ConvertChinese.s2t(leaf.innerHTML);
+      if (converted !== leaf.innerHTML) {
+        leaf.innerHTML = addHoverToText(converted);
+      }
+
+      // If the current span isn't processed, add hover functionality.
+      if (!leaf.className.includes('chinese-character')) {
+        const newHtml = addHoverToText(leaf.innerHTML)
+        if (leaf.innerHTML !== newHtml) {
+          leaf.innerHTML = newHtml;
+          addHoverListeners(leaf);
+        }
+      }
     }
   });
-}
-
-function getLeafNodes(node) {
-  if (node.tagName === 'script') {
-    return [];
-  }
-
-  if (!node.children || !node.children.length) {
-    return [node];
-  } else {
-    let leaves = [];
-    for (let i = 0; i < node.children.length; i++) { 
-      leaves = leaves.concat(getLeafNodes(node.children[i]));
-    };
-    return leaves;
-  }
 }
 
 // Attaches a listener to the next button, which translates any text input into simplified Chinese before the answer is submitted.
@@ -78,15 +74,13 @@ function attachNextButtonListener(node) {
 function addHoverToText(text) {
   let newHtml = '';
   for (let i = 0; i < text.length; i++) {
-    if (isChineseChar(text[i])) {
+    if (includesChinese(text[i])) {
       newHtml += textToSpan(text[i]);        
+    } else {
+      newHtml += text[i];
     }
   }
   return newHtml;
-}
-
-function isChineseChar(c) {
-  return c.match(/[\u2E80-\u2FD5\u3190-\u319f\u3400-\u4DBF\u4E00-\u9FCC\uF900-\uFAAD]/g);
 }
 
 function textToSpan(c) {
@@ -105,14 +99,14 @@ function addHoverListeners(node) {
 }
 
 function onMouseOver(e) {
-  console.log('hovered');
   chrome.runtime.sendMessage({ type: 'query', payload: e.target.textContent }, (res) => {
     console.log(res);
+    const pos = getAbsoluteOffset(e.target);
     const customEvent = new CustomEvent('opencharacterinfo', {
       detail: {
         characterData: res,
-        top: e.target.top,
-        left: e.target.left
+        top: pos.top,
+        left: pos.left
       }
     });
     document.body.dispatchEvent(customEvent);

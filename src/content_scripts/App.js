@@ -16,9 +16,10 @@ if (!document.querySelector('character-info-app')) {
   const reactRoot = document.createElement('div');
 
   const styles = `
+    box-sizing: border-box;
+    left: 0;
     position: absolute;
     top: 0;
-    left: 0;
   `;
   reactRoot.className = 'character-info-app';
   reactRoot.style = styles;
