@@ -46,7 +46,7 @@ function replaceSimplifiedChars(node) {
       }
 
       // If the current span isn't processed, add hover functionality.
-      if (!leaf.className.includes('chinese-character')) {
+      if (!leaf.className || !leaf.className.includes('chinese-character')) {
         const newHtml = addHoverToText(leaf.innerHTML)
         if (leaf.innerHTML !== newHtml) {
           leaf.innerHTML = newHtml;
@@ -100,13 +100,14 @@ function addHoverListeners(node) {
 
 function onMouseOver(e) {
   chrome.runtime.sendMessage({ type: 'query', payload: e.target.textContent }, (res) => {
-    console.log(res);
+    // Get position of character. Account for character width.
     const pos = getAbsoluteOffset(e.target);
+    const fontSize = parseInt(window.getComputedStyle(e.target).fontSize);
     const customEvent = new CustomEvent('opencharacterinfo', {
       detail: {
         characterData: res,
         top: pos.top,
-        left: pos.left
+        left: pos.left + (fontSize / 2)
       }
     });
     document.body.dispatchEvent(customEvent);
