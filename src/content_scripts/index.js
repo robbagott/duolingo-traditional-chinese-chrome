@@ -109,7 +109,11 @@ function onMouseOver(e) {
   chrome.runtime.sendMessage({ type: 'query', payload: e.target.textContent }, (res) => {
     console.log(res);
     const customEvent = new CustomEvent('opencharacterinfo', {
-      detail: res
+      detail: {
+        characterData: res,
+        top: e.target.top,
+        left: e.target.left
+      }
     });
     document.body.dispatchEvent(customEvent);
   });

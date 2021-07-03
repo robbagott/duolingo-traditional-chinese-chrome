@@ -2,15 +2,14 @@ import React, { useEffect, useState } from 'react';
 
 const CharacterInfo = () => {
   const [characterData, setCharacterData] = useState(null);
+  const [position, setPosition] = useState([0, 0]);
 
   useEffect(() => {
-    console.log('listening...');
     const openListener = document.body.addEventListener('opencharacterinfo', (e) => {
-      console.log('received event', e);
-      setCharacterData(e.detail)
+      setCharacterData(e.detail.characterData);
+      setPosition([e.detail.top, e.detail.left]);
     });
     const closeListener = document.body.addEventListener('closecharacterinfo', (e) => {
-      console.log('received event', e);
       setCharacterData(null);
     });
 
@@ -20,16 +19,20 @@ const CharacterInfo = () => {
     }
   }, []);
 
-  if (characterData !== null) {
 
-  } else {
-
-  }
+  const styles = `
+    left: ${position[0]}
+    top: ${position[1]};
+  `;
+  const characterInfo = JSON.stringify(characterData);
   return (
-    <div>
-      {JSON.stringify(characterData)}
+    <div style={styles}>
+      {characterData
+        ? characterInfo 
+        : null
+      }
     </div>
-  )
+  );
 };
 
 export default CharacterInfo;
