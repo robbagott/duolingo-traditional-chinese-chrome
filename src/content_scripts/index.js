@@ -1,5 +1,6 @@
 import ConvertChinese from 'chinese-s2t';
 import { openDB } from 'idb';
+import app from './App.js';
 
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user clicks the back button in the browser.
@@ -9,7 +10,7 @@ if (!window.duolingoTraditionalChineseExtensionRunning) {
 }
 
 function runExtension() {
-  // Run immediately before observing.
+  // Run immediately before observing. Then observe and react to changes.
   replaceSimplifiedChars(document.body);
   setMutationObserver();
 };
@@ -98,13 +99,23 @@ function textToSpan(c) {
 function addHoverListeners(node) {
   const spans = node.querySelectorAll('span');
   for (let i = 0; i < spans.length; i++) {
-    spans[i].onmouseover = onHover;
+    spans[i].onmouseover = onMouseOver;
+    spans[i].onmouseout = onMouseOut;
   }
 }
 
-function onHover(e) {
-  console.log('hovered!', e);
+function onMouseOver(e) {
+  console.log('hovered');
   chrome.runtime.sendMessage({ type: 'query', payload: e.target.textContent }, (res) => {
-    console.log(res); 
+    console.log(res);
+    const customEvent = new CustomEvent('opencharacterinfo', {
+      detail: res
+    });
+    document.body.dispatchEvent(customEvent);
   });
+}
+
+function onMouseOut(e) {
+  const customEvent = new Event('closecharacterinfo');
+  document.body.dispatchEvent(customEvent);
 }
