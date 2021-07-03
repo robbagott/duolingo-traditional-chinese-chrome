@@ -51,14 +51,24 @@ function populateData(db) {
     Promise.all(additions).then(() => {
       console.log('done populating');
       chrome.storage.local.set({ duolingoTraditionalChineseInitialized: true });
-
-      // run a little test...
-      const res = db.getFromIndex('cedict', 'traditional', '謝')
-        .then(res => {
-          console.log(res);
-          db.close();
-        })
-        .catch(err => console.error(err));
-    }).catch((err) => console.error(err));
+      return db;
+    }).then(listen)
+      .catch((err) => console.error(err));
+  } else {
+    listen(db);
   }
+}
+
+function listen(db) {
+  console.log('listening');
+  chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+    console.log('received request', req, sender);
+    if (req.type === 'query') {
+      db.getAllFromIndex('cedict', 'traditional', req.payload).then(res => {
+        console.log('found character info', res);
+        sendResponse(res);
+      });
+      return true;
+    }
+  });
 }

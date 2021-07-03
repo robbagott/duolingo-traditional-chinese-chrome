@@ -1,15 +1,10 @@
 import ConvertChinese from 'chinese-s2t';
 import { openDB } from 'idb';
 
-let db = null;
-
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user clicks the back button in the browser.
 if (!window.duolingoTraditionalChineseExtensionRunning) {
   window.duolingoTraditionalChineseExtensionRunning = true;
-  openDB('duolingo-traditional-chinese').then((openedDb) => {
-    db = openedDb;
-  });
   runExtension();
 }
 
@@ -109,9 +104,7 @@ function addHoverListeners(node) {
 
 function onHover(e) {
   console.log('hovered!', e);
-  db.getFromIndex('cedict', 'traditional', e.target.textContent)
-    .then(res => {
-      console.log(res);
-    })
-    .catch(err => console.error(err));
+  chrome.runtime.sendMessage({ type: 'query', payload: e.target.textContent }, (res) => {
+    console.log(res); 
+  });
 }
