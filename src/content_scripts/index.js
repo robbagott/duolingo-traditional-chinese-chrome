@@ -1,9 +1,15 @@
 import ConvertChinese from 'chinese-s2t';
+import { openDB } from 'idb';
+
+let db = null;
 
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user clicks the back button in the browser.
 if (!window.duolingoTraditionalChineseExtensionRunning) {
   window.duolingoTraditionalChineseExtensionRunning = true;
+  openDB('duolingo-traditional-chinese').then((openedDb) => {
+    db = openedDb;
+  });
   runExtension();
 }
 
@@ -11,7 +17,6 @@ function runExtension() {
   // Run immediately before observing.
   replaceSimplifiedChars(document.body);
   setMutationObserver();
-
 };
 
 function setMutationObserver() {
@@ -48,6 +53,7 @@ function getLeafNodes(node) {
   if (node.tagName === 'script') {
     return [];
   }
+
   if (!node.children || !node.children.length) {
     return [node];
   } else {
@@ -64,7 +70,6 @@ function attachNextButtonListener(node) {
   if (node.tagName === 'button' && node['data-test'] === 'player-next') {
     node.addEventListener('mouseup', () => {
       const textarea = document.querySelector('textarea[data-test=challenge-translate-input]');
-      
       const simplified = ConvertChinese.t2s(textarea.value)
       if (textarea.value !== simplified) {
         textarea.value = simplified;
@@ -98,10 +103,15 @@ function textToSpan(c) {
 function addHoverListeners(node) {
   const spans = node.querySelectorAll('span');
   for (let i = 0; i < spans.length; i++) {
-    spans[i].onHover = onHover;
+    spans[i].onmouseover = onHover;
   }
 }
 
 function onHover(e) {
-  console.log('hovered!');
+  console.log('hovered!', e);
+  db.getFromIndex('cedict', 'traditional', e.target.textContent)
+    .then(res => {
+      console.log(res);
+    })
+    .catch(err => console.error(err));
 }

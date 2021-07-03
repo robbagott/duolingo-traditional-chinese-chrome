@@ -3,7 +3,7 @@
   "description": "When active, converts simplified Chinese characters to traditional Chinese characters during Duolingo lessons.",
   "version": "1.0",
   "manifest_version": 3,
-  "permissions": ["tabs", "scripting"],
+  "permissions": ["tabs", "scripting", "storage"],
   "host_permissions": ["http://*.duolingo.com/*", "https://*.duolingo.com/*"],
   "background": {
     "service_worker": "background.js"
