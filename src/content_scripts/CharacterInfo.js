@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import ReactDom from 'react-dom';
 import { usePopper } from 'react-popper';
 
 const containerStyles = {
@@ -6,6 +7,8 @@ const containerStyles = {
   border: '0.125rem solid #e5e5e5',
   borderRadius: '0.75rem',
   color: '#3c3c3c',
+  fontWeight: 'initial',
+  fontSize: 'initial',
   height: '15rem',
   lineHeight: 'initial',
   overflowY: 'auto',
@@ -42,6 +45,7 @@ function fetchCharacter (character, setCharacterData) {
 const CharacterInfo = ({character}) => {
   const [characterData, setCharacterData] = useState(null);
   const [hideDelayTimeout, setHideDelayTimeout] = useState(null);
+  const [showDelayTimeout, setShowDelayTimeout] = useState(null);
   const [showing, setShowing] = useState(false);
   const [refElem, setRefElem] = useState(null);
   const [popperElem, setPopperElem] = useState(null);
@@ -55,12 +59,21 @@ const CharacterInfo = ({character}) => {
   const onMouseLeave = useCallback(() => {
     const hideDelayTimeout = setTimeout(() => {
       setShowing(false);
-    }, 500);
+    }, 250);
     setHideDelayTimeout(hideDelayTimeout);
-  }, []);
+
+    if (showDelayTimeout) {
+      clearTimeout(showDelayTimeout);
+      setShowDelayTimeout(null);
+    }
+  }, [showDelayTimeout]);
 
   const onMouseOver = useCallback(() => {
-    setShowing(true);
+    const showDelayTimeout = setTimeout(() => {
+      setShowing(true);
+    }, 1000);
+    setShowDelayTimeout(showDelayTimeout);
+
     if (!characterData) {
       fetchCharacter(character, setCharacterData)
     }
@@ -88,7 +101,7 @@ const CharacterInfo = ({character}) => {
     visibility: showing ? 'visible' : 'hidden',
     pointerEvents: showing ? 'auto' : 'hidden',
     opacity: showing ? '1' : '0',
-    transition: 'opacity .3s',
+    transition: showing ? 'opacity 0.3s' : 'opacity 0.3s, visibility 0s 0.3s',
     zIndex: '1000'
   };
 
@@ -97,26 +110,29 @@ const CharacterInfo = ({character}) => {
       <span 
         onMouseOver={onMouseOver} 
         onMouseLeave={onMouseLeave}
-        className={'chinese-character'} 
+        className={'character-info'} 
         ref={setRefElem}>
         {character}
       </span>
-      <div 
-        onMouseOver={onMouseOver} 
-        onMouseLeave={onMouseLeave}
-        ref={setPopperElem} 
-        style={popperStyles}
-        {...attributes.popper}>
-        <div style={containerStyles}>
-          <div className="chinese-character" style={characterStyles}>
-            {character}
+      {ReactDom.createPortal(
+        <div 
+          onMouseOver={onMouseOver} 
+          onMouseLeave={onMouseLeave}
+          ref={setPopperElem} 
+          style={popperStyles}
+          {...attributes.popper}>
+          <div style={containerStyles}>
+            <div className="character-info" style={characterStyles}>
+              {character}
+            </div>
+            <div style={definitionStyles}>
+              {definitions}
+            </div>
           </div>
-          <div style={definitionStyles}>
-            {definitions}
-          </div>
-        </div>
-        <div ref={setArrowElem} style={styles.arrow} />
-      </div>
+          <div ref={setArrowElem} style={styles.arrow} />
+        </div>,
+        document.body
+      )}
     </>
   ); 
 };

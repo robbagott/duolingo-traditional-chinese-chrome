@@ -40,19 +40,22 @@ function setMutationObserver() {
 function replaceSimplifiedChars(node) {
   const leaves = getLeafNodes(node);
   leaves.forEach((leaf) => {
-    if (leaf.innerHTML) {
-      // Convert any simplified text to traditional, only making changes if necessary.
-      const converted = ConvertChinese.s2t(leaf.innerHTML);
-      if (converted !== leaf.innerHTML) {
-        leaf.innerHTML = textToSpans(converted);
-      }
+    if (!leaf.innerHTML) return;
 
-      // If the current span isn't processed, add hover functionality.
-      if (typeof leaf.className === 'string' && !leaf.className.includes('chinese-character')) {
-        const newHtml = textToSpans(leaf.innerHTML)
-        if (leaf.innerHTML !== newHtml) {
-          leaf.innerHTML = newHtml;
-          addCharacterInfo(leaf);
+    // Convert any simplified text to traditional, only making DOM changes if necessary (avoid MutationObserver chain reactions).
+    const converted = ConvertChinese.s2t(leaf.innerHTML);
+    if (converted !== leaf.innerHTML) {
+      leaf.innerHTML = textToSpans(converted);
+    }
+
+    // If the current span isn't processed, add hover functionality.
+    if (typeof leaf.className === 'string' && !leaf.className.includes('character-info')) {
+      const newHtml = textToSpans(leaf.innerHTML)
+      if (leaf.innerHTML !== newHtml) {
+        leaf.innerHTML = newHtml;
+        const newCharInfos = leaf.querySelectorAll('.add-character-info');
+        for (let i = 0; i < newCharInfos.length; i++) {
+          addCharacterInfo(newCharInfos[i]);
         }
       }
     }
@@ -87,13 +90,12 @@ function textToSpans(text) {
 
 function textToSpan(c) {
   const span = document.createElement('span');
-  span.className = 'chinese-character';
+  span.className = 'add-character-info'; // Mark span for later processing.
   span.textContent = c;
   return span.outerHTML;
 }
 
 function addCharacterInfo(node) {
-  console.log('addCharacterInfo', node.textContent);
   ReactDom.render(<CharacterInfo character={node.textContent} />, node);
 }
 
