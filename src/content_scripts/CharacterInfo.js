@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { usePopper } from 'react-popper';
 
 const containerStyles = {
   background: '#fff',
@@ -10,7 +11,6 @@ const containerStyles = {
   overflowY: 'auto',
   overflowX: 'hidden',
   padding: '1rem',
-  position: 'absolute',
   width: '15rem',
   zIndex: '1000'
 };
@@ -33,63 +33,92 @@ const listStyles = {
   marginLeft: '2rem',
 };
 
-const CharacterInfo = () => {
+function fetchCharacter (character, setCharacterData) {
+  chrome.runtime.sendMessage({ type: 'query', payload: character}, (res) => {
+    setCharacterData(res);
+  });
+}
+
+const CharacterInfo = ({character}) => {
   const [characterData, setCharacterData] = useState(null);
-  const [position, setPosition] = useState({ bottom: 0, left: 0 });
+  const [hideDelayTimeout, setHideDelayTimeout] = useState(null);
+  const [showing, setShowing] = useState(false);
+  const [refElem, setRefElem] = useState(null);
+  const [popperElem, setPopperElem] = useState(null);
+  const [arrowElem, setArrowElem] = useState(null);
 
-  useEffect(() => {
-    const openListener = document.body.addEventListener('opencharacterinfo', (e) => {
-      setCharacterData(e.detail.characterData);
-      setPosition({
-        bottom: -e.detail.top + 10,
-        left: e.detail.left
-      });
-    });
-
-    const closeListener = document.body.addEventListener('closecharacterinfo', (e) => {
-      setCharacterData(null);
-    });
-
-    return () => {
-      document.body.removeEventListener('opencharacterinfo', openListener);
-      document.body.removeEventListener('closecharacterinfo', closeListener);
-    };
-  }, []);
-
-
-
-  if (!characterData) {
-    return null;
-  }
-
-  const newContainerStyles = {
-    display: characterData ? 'block' : 'none',
-    left: `calc(${position.left}px - 7.5rem)`,
-    bottom: position.bottom,
-    ...containerStyles
-  };
-
-  const character = characterData[0].traditional;
-  const definitions = [];
-  characterData.forEach(pronunciation => {
-    definitions.push(<div style={pronunciationStyles}>{pronunciation.pinyin}</div>);
-    definitions.push(
-      <ol style={listStyles}>
-        {pronunciation.definitions.map(def => <li>{def}</li>)}
-      </ol>
-    );
+  const { styles, attributes } = usePopper(refElem, popperElem, {
+    modifiers: [{ name: 'arrow', options: { element: arrowElem } }],
+    placement: 'top'
   });
 
+  const onMouseLeave = useCallback(() => {
+    const hideDelayTimeout = setTimeout(() => {
+      setShowing(false);
+    }, 500);
+    setHideDelayTimeout(hideDelayTimeout);
+  }, []);
+
+  const onMouseOver = useCallback(() => {
+    setShowing(true);
+    if (!characterData) {
+      fetchCharacter(character, setCharacterData)
+    }
+    if (hideDelayTimeout) {
+      clearTimeout(hideDelayTimeout);
+      setHideDelayTimeout(null);
+    }
+  }, [hideDelayTimeout]);
+
+  // Rendering logic
+  const definitions = [];
+  if (characterData) {
+    characterData.forEach(pronunciation => {
+      definitions.push(<div style={pronunciationStyles}>{pronunciation.pinyin}</div>);
+      definitions.push(
+        <ol style={listStyles}>
+          {pronunciation.definitions.map(def => <li>{def}</li>)}
+        </ol>
+      );
+    });
+  }
+
+  const popperStyles = {
+    ...styles.popper,
+    visibility: showing ? 'visible' : 'hidden',
+    pointerEvents: showing ? 'auto' : 'hidden',
+    opacity: showing ? '1' : '0',
+    transition: 'opacity .3s',
+    zIndex: '1000'
+  };
+
   return (
-    <div style={newContainerStyles}>
-      <div style={characterStyles}>
-        {characterData[0].traditional}
+    <>
+      <span 
+        onMouseOver={onMouseOver} 
+        onMouseLeave={onMouseLeave}
+        className={'chinese-character'} 
+        ref={setRefElem}>
+        {character}
+      </span>
+      <div 
+        onMouseOver={onMouseOver} 
+        onMouseLeave={onMouseLeave}
+        ref={setPopperElem} 
+        style={popperStyles}
+        {...attributes.popper}>
+        <div style={containerStyles}>
+          <div className="chinese-character" style={characterStyles}>
+            {character}
+          </div>
+          <div style={definitionStyles}>
+            {definitions}
+          </div>
+        </div>
+        <div ref={setArrowElem} style={styles.arrow} />
       </div>
-      <div style={definitionStyles}>
-        {definitions}
-      </div>
-    </div>
-  );
+    </>
+  ); 
 };
 
 export default CharacterInfo;

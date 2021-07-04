@@ -1,7 +1,9 @@
 import ConvertChinese from 'chinese-s2t';
 import { openDB } from 'idb';
-import app from './App.js';
 import { getLeafNodes, includesChinese, getAbsoluteOffset } from '../util.js';
+import React from 'react';
+import ReactDom from 'react-dom';
+import CharacterInfo from './CharacterInfo';
 
 // Don't run extension if it's already running. The extension must be injected by background service
 // when the user clicks the back button in the browser.
@@ -42,15 +44,15 @@ function replaceSimplifiedChars(node) {
       // Convert any simplified text to traditional, only making changes if necessary.
       const converted = ConvertChinese.s2t(leaf.innerHTML);
       if (converted !== leaf.innerHTML) {
-        leaf.innerHTML = addHoverToText(converted);
+        leaf.innerHTML = textToSpans(converted);
       }
 
       // If the current span isn't processed, add hover functionality.
-      if (!leaf.className || !leaf.className.includes('chinese-character')) {
-        const newHtml = addHoverToText(leaf.innerHTML)
+      if (typeof leaf.className === 'string' && !leaf.className.includes('chinese-character')) {
+        const newHtml = textToSpans(leaf.innerHTML)
         if (leaf.innerHTML !== newHtml) {
           leaf.innerHTML = newHtml;
-          addHoverListeners(leaf);
+          addCharacterInfo(leaf);
         }
       }
     }
@@ -71,7 +73,7 @@ function attachNextButtonListener(node) {
 }
 
 // Converts Chinese characters to spans. Then attaches event listener to these spans which open a dictionary.
-function addHoverToText(text) {
+function textToSpans(text) {
   let newHtml = '';
   for (let i = 0; i < text.length; i++) {
     if (includesChinese(text[i])) {
@@ -90,31 +92,8 @@ function textToSpan(c) {
   return span.outerHTML;
 }
 
-function addHoverListeners(node) {
-  const spans = node.querySelectorAll('span');
-  for (let i = 0; i < spans.length; i++) {
-    spans[i].onmouseover = onMouseOver;
-    spans[i].onmouseout = onMouseOut;
-  }
+function addCharacterInfo(node) {
+  console.log('addCharacterInfo', node.textContent);
+  ReactDom.render(<CharacterInfo character={node.textContent} />, node);
 }
 
-function onMouseOver(e) {
-  chrome.runtime.sendMessage({ type: 'query', payload: e.target.textContent }, (res) => {
-    // Get position of character. Account for character width.
-    const pos = getAbsoluteOffset(e.target);
-    const fontSize = parseInt(window.getComputedStyle(e.target).fontSize);
-    const customEvent = new CustomEvent('opencharacterinfo', {
-      detail: {
-        characterData: res,
-        top: pos.top,
-        left: pos.left + (fontSize / 2)
-      }
-    });
-    document.body.dispatchEvent(customEvent);
-  });
-}
-
-function onMouseOut(e) {
-  const customEvent = new Event('closecharacterinfo');
-  document.body.dispatchEvent(customEvent);
-}
