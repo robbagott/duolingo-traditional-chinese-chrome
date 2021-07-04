@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { openDB, deleteDB } from 'idb';
 import cedict from './cedict.json';
 
@@ -19,8 +20,9 @@ function initializeDb() {
   openDB(dbName, 1, {
     upgrade: (db, oldVersion, newVersion, transaction) => {
       console.log('upgrading');
-      const objStore = db.createObjectStore('cedict', { keyPath: 'key'});
-      objStore.createIndex('traditional', 'traditional');
+      const ceStore = db.createObjectStore('cedict', { keyPath: 'key' });
+      db.createObjectStore('mmhdict', { keyPath: 'character' });
+      ceStore.createIndex('traditional', 'traditional');
       upgraded = true;
     },
     blocked: () => {
@@ -40,12 +42,21 @@ function populateData(db) {
   if (upgraded) {
     console.log('populating data');
     chrome.storage.local.set({ duolingoTraditionalChineseInitializeStarted: true });
-    const tx = db.transaction('cedict', 'readwrite');
+    const ceTx = db.transaction('cedict', 'readwrite');
     const additions = [];
     let counter = 0;
-    cedict.forEach((entry) => {
+    cedict.forEach(entry => {
       entry.key = counter++;
-      additions.push(tx.store.add(entry));
+      additions.push(ceTx.store.add(entry));
+    });
+
+    const mmhTx = db.transaction('mmhdict', 'readwrite');
+    const mmhData = readMmh();
+    mmhData.forEach(entry => {
+      if (!entry.character) {
+        console.log(entry);
+      }
+      additions.push(mmhTx.store.add(entry));
     });
 
     Promise.all(additions).then(() => {
@@ -71,4 +82,21 @@ function listen(db) {
       return true;
     }
   });
+}
+
+function readMmh() {
+  console.log('parsing');
+  const url = chrome.runtime.getURL('makemeahanzi-dictionary.txt');
+  axios.get(url).then(res => {
+    const mmhData = mmhDict.split('\n');
+    mmhData.forEach((entry, i) => {
+      try {
+        mmhData[i] = JSON.parse(entry);
+      } catch (e) {
+        console.log(e, mmhData[i]);
+      }
+    });
+  console.log('completed parsing');
+  });
+  return mmhData;
 }

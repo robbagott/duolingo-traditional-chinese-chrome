@@ -18,7 +18,7 @@ module.exports = {
         use: ['babel-loader'],
       },
       {
-        test: /\.(u8)$/,
+        test: /\.(u8|txt)$/,
         type: 'asset/resource'
       }
     ]

@@ -28,6 +28,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
     "@fortawesome/react-fontawesome": "^0.1.14",
     "@popperjs/core": "^2.9.2",
+    "axios": "^0.21.1",
     "chinese-s2t": "^1.0.0",
     "idb": "^6.1.2",
     "react": "^17.0.2",
