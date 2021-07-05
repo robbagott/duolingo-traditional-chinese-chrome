@@ -28,9 +28,18 @@ module.exports = {
       patterns: [
         {
           from: path.resolve(__dirname, 'src/manifest.json'),
-          to: path.resolve(__dirname, "dist")
+          to: path.resolve(__dirname, 'dist')
+        },
+        {
+          from: path.resolve(__dirname, 'resources/makemeahanzi-dictionary.txt'),
+          to: path.resolve(__dirname, 'dist')
+        },
+        {
+          from: path.resolve(__dirname, 'resources/cedict.json'),
+          to: path.resolve(__dirname, 'dist')
         }
       ]
     })
-  ]
+  ],
+  target: ['web', 'es5']
 };

@@ -7,5 +7,12 @@
   "host_permissions": ["http://*.duolingo.com/*", "https://*.duolingo.com/*"],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["makemeahanzi-dictionary.txt", "cedict.json"],
+      "matches": [],
+      "extension_ids": []
+    }
+  ]
 }

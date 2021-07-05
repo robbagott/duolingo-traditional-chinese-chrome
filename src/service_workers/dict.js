@@ -1,72 +1,90 @@
-import axios from 'axios';
+import '@babel/polyfill';
 import { openDB, deleteDB } from 'idb';
-import cedict from './cedict.json';
 
 const dbName = 'duolingo-traditional-chinese';
+const cedictTable = 'cedict';
+const mmhTable = 'mmhdict'
 
-let upgraded = false;
-if (chrome.storage.local.get('duolingoTraditionalChineseInitializeStarted') && 
-    !chrome.storage.local.get('duolingoTraditionalChineseInitialized')) {
-  console.log('deleting db');
-  deleteDB()
-    .then(initializeDb)
-    .catch(err => console.error('Failed to delete DB', err));
-} else {
-  initializeDb();
-}
+start();
 
-function initializeDb() {
-  console.log('opening db');
-  openDB(dbName, 1, {
-    upgrade: (db, oldVersion, newVersion, transaction) => {
-      console.log('upgrading');
-      const ceStore = db.createObjectStore('cedict', { keyPath: 'key' });
-      db.createObjectStore('mmhdict', { keyPath: 'character' });
-      ceStore.createIndex('traditional', 'traditional');
-      upgraded = true;
-    },
-    blocked: () => {
-      console.log('blocked');
-    },
-    blocking: () => {
-      console.log('blocking');
-    },
-    terminated: () => {
-      console.log('terminated');
+async function start() {
+  if (extensionFailedInitialize()) {
+    console.log('deleting db');
+    try {
+      await deleteDB()
+    } catch (e) {
+      console.error(e);
     }
-  }).then(populateData)
-    .catch(err => console.error(err));
+  } 
+  const { db, upgraded } = await initializeDb();
+  if (upgraded) {
+    await populateData(db);
+  }
+  listen(db);
 }
 
-function populateData(db) {
-  if (upgraded) {
+function extensionFailedInitialize() {
+  return chrome.storage.local.get('duolingoTraditionalChineseInitializeStarted') && 
+         !chrome.storage.local.get('duolingoTraditionalChineseInitialized');
+}
+
+async function initializeDb() {
+  let upgraded = false;
+  try {
+    const db = await openDB(dbName, 1, {
+      upgrade: (db, oldVersion, newVersion, transaction) => {
+        console.log('upgrading');
+        const ceStore = db.createObjectStore(cedictTable, { keyPath: 'key' });
+        db.createObjectStore(mmhTable, { keyPath: 'character' });
+        ceStore.createIndex('traditional', 'traditional');
+        upgraded = true;
+      },
+      blocked: () => {
+        console.log('blocked');
+      },
+      blocking: () => {
+        console.log('blocking');
+      },
+      terminated: () => {
+        console.log('terminated');
+      }
+    });
+    return { db, upgraded };
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function populateData(db) {
+  try {
+    // Populate Cedict data.
     console.log('populating data');
     chrome.storage.local.set({ duolingoTraditionalChineseInitializeStarted: true });
-    const ceTx = db.transaction('cedict', 'readwrite');
-    const additions = [];
+    const cedict = await readCedict();
+    const ceTx = db.transaction(cedictTable, 'readwrite');
+    let additions = [];
     let counter = 0;
     cedict.forEach(entry => {
       entry.key = counter++;
       additions.push(ceTx.store.add(entry));
     });
+    await Promise.all(additions)
 
-    const mmhTx = db.transaction('mmhdict', 'readwrite');
-    const mmhData = readMmh();
-    mmhData.forEach(entry => {
-      if (!entry.character) {
-        console.log(entry);
+    // Populate MakeMeAHanzi data.
+    const mmhData = await readMmh();
+    additions = [];
+    const mmhTx = db.transaction(mmhTable, 'readwrite');
+    mmhData.forEach((entry, i) => {
+      if (entry.character) {
+        additions.push(mmhTx.store.add(entry));
       }
-      additions.push(mmhTx.store.add(entry));
     });
-
-    Promise.all(additions).then(() => {
-      console.log('done populating');
-      chrome.storage.local.set({ duolingoTraditionalChineseInitialized: true });
-      return db;
-    }).then(listen)
-      .catch((err) => console.error(err));
-  } else {
-    listen(db);
+    await Promise.all(additions);
+    console.log('done populating');
+    chrome.storage.local.set({ duolingoTraditionalChineseInitialized: true });
+    return db;
+  } catch (e) {
+    console.log(e);
   }
 }
 
@@ -84,19 +102,29 @@ function listen(db) {
   });
 }
 
-function readMmh() {
-  console.log('parsing');
-  const url = chrome.runtime.getURL('makemeahanzi-dictionary.txt');
-  axios.get(url).then(res => {
-    const mmhData = mmhDict.split('\n');
+async function readMmh() {
+  try {
+    const url = chrome.runtime.getURL('makemeahanzi-dictionary.txt');
+    const res = await fetch(url);
+    const mmhData = (await res.text()).split('\n');
     mmhData.forEach((entry, i) => {
-      try {
+      if (entry) {
         mmhData[i] = JSON.parse(entry);
-      } catch (e) {
-        console.log(e, mmhData[i]);
       }
     });
-  console.log('completed parsing');
-  });
-  return mmhData;
+    return mmhData;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function readCedict() {
+  try {
+    const url = chrome.runtime.getURL('cedict.json');
+    const res = await fetch(url);
+    const cedict = await res.json();
+    return cedict;
+  } catch (e) {
+    console.log(e);
+  }
 }
