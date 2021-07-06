@@ -41,5 +41,7 @@ module.exports = {
       ]
     })
   ],
-  target: ['web', 'es5']
+  optimization: {
+    minimize: false
+  }
 };

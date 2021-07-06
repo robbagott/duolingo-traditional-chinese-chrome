@@ -27,6 +27,7 @@ function setMutationObserver() {
           attachNextButtonListener(mut.addedNodes[i]);
         }
       }
+      // TODO Remove CharacterInfos from removed nodes.
     });
   });
 

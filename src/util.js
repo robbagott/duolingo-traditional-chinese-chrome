@@ -1,7 +1,8 @@
 export {
   getAbsoluteOffset,
   getLeafNodes,
-  includesChinese
+  includesChinese,
+  stripIdsChars
 };
 
 function getAbsoluteOffset(element) {
@@ -36,5 +37,9 @@ function getLeafNodes(node) {
 
 function includesChinese(str) {
   return str.match(/[\u2E80-\u2FD5\u3190-\u319f\u3400-\u4DBF\u4E00-\u9FCC\uF900-\uFAAD]/g);
+}
+
+function stripIdsChars(input) {
+  return input.replace(/[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]/g, '');
 }
 

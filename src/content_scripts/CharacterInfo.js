@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDom from 'react-dom';
 import { usePopper } from 'react-popper';
+import { stripIdsChars } from '../util.js';
 
 const styles = {
   container: {
@@ -10,12 +11,12 @@ const styles = {
     color: '#3c3c3c',
     fontWeight: 'initial',
     fontSize: 'initial',
-    height: '15rem',
+    height: '20rem',
     lineHeight: 'initial',
     overflowY: 'auto',
     overflowX: 'hidden',
     padding: '1rem',
-    width: '15rem',
+    width: '20rem',
     zIndex: '1000'
   },
   character: {
@@ -25,12 +26,19 @@ const styles = {
   definitions: {
     paddingTop: '1rem'
   },
-  pronunciation: {
+  section: {
     fontWeight: 'bold' 
   },
   list: {
     listStyleType: 'decimal',
     marginLeft: '2rem',
+  },
+  separator: {
+    borderBottom: '0.06rem solid #e5e5e5',
+    margin: '1rem'
+  },
+  compSection: {
+    marginLeft: '1rem'
   }
 };
 
@@ -42,7 +50,7 @@ function fetchCharacter (character, setCharacterData) {
 }
 
 const CharacterInfo = ({character}) => {
-  const [characterData, setCharacterData] = useState(null);
+  const [data, setData] = useState(null);
   const [hideDelayTimeout, setHideDelayTimeout] = useState(null);
   const [showDelayTimeout, setShowDelayTimeout] = useState(null);
   const [showing, setShowing] = useState(false);
@@ -68,31 +76,58 @@ const CharacterInfo = ({character}) => {
   }, [showDelayTimeout]);
 
   const onMouseOver = useCallback(() => {
-    const showDelayTimeout = setTimeout(() => {
+    clearTimeout(showDelayTimeout);
+    const newShowDelayTimeout = setTimeout(() => {
       setShowing(true);
     }, 1000);
-    setShowDelayTimeout(showDelayTimeout);
+    setShowDelayTimeout(newShowDelayTimeout);
 
-    if (!characterData) {
-      fetchCharacter(character, setCharacterData)
+    if (!data) {
+      fetchCharacter(character, setData)
     }
     if (hideDelayTimeout) {
       clearTimeout(hideDelayTimeout);
       setHideDelayTimeout(null);
     }
-  }, [hideDelayTimeout]);
+  }, [hideDelayTimeout, showDelayTimeout]);
 
   // Rendering logic
-  const definitions = [];
-  if (characterData) {
-    characterData.definitions.forEach(pronunciation => {
-      definitions.push(<div style={styles.pronunciation}>{pronunciation.pinyin}</div>);
-      definitions.push(
-        <ol style={styles.list}>
-          {pronunciation.definitions.map(def => <li>{def}</li>)}
-        </ol>
+  let definitions = [];
+  let comp = [];
+  if (data) {
+    definitions = (
+      data.definitions.map(pronunciation => (
+        <>
+          <div style={styles.section}>{pronunciation.pinyin}</div>
+          <ol style={styles.list}>
+            {pronunciation.definitions.map(def => <li>{def}</li>)}
+          </ol>
+        </>
+      ))
+    );
+
+    if (data.extended) {
+      comp.push(<div style={styles.separator}></div>);
+      const eData = data.extended.etymology;
+      comp.push(<div style={styles.section}>Composition</div>);
+
+      const decompStr = stripIdsChars(data.extended.decomposition);
+      let chars = decompStr.split('');
+      const compSection = (
+        <div style={styles.compSection}>
+          {
+            chars.map(c => (
+              <>
+                {eData && eData.semantic === c ? <div>{c} (semantic)</div> : null} 
+                {eData && eData.phonetic === c ? <div>{c} (phonetic)</div> : null} 
+                {!eData || (eData.phonetic !== c && eData.semantic !== c) ? <div>{c}</div> : null} 
+              </>
+            ))
+          }
+        </div>
       );
-    });
+      comp.push(compSection);
+    }
   }
 
   const newPopperStyles = {
@@ -125,8 +160,10 @@ const CharacterInfo = ({character}) => {
               {character}
             </div>
             <div style={styles.definition}>
+            <div style={styles.separator}></div>
               {definitions}
             </div>
+            {comp}
           </div>
           <div ref={setArrowElem} style={popper.styles.arrow} />
         </div>,
