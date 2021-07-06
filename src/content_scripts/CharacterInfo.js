@@ -2,42 +2,41 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ReactDom from 'react-dom';
 import { usePopper } from 'react-popper';
 
-const containerStyles = {
-  background: '#fff',
-  border: '0.125rem solid #e5e5e5',
-  borderRadius: '0.75rem',
-  color: '#3c3c3c',
-  fontWeight: 'initial',
-  fontSize: 'initial',
-  height: '15rem',
-  lineHeight: 'initial',
-  overflowY: 'auto',
-  overflowX: 'hidden',
-  padding: '1rem',
-  width: '15rem',
-  zIndex: '1000'
-};
-
-const characterStyles = {
-  fontSize: '5rem',
-  textAlign: 'center'
-};
-
-const definitionStyles = {
-  paddingTop: '1rem'
-};
-
-const pronunciationStyles = {
-  fontWeight: 'bold' 
-};
-
-const listStyles = {
-  listStyleType: 'decimal',
-  marginLeft: '2rem',
+const styles = {
+  container: {
+    background: '#fff',
+    border: '0.125rem solid #e5e5e5',
+    borderRadius: '0.75rem',
+    color: '#3c3c3c',
+    fontWeight: 'initial',
+    fontSize: 'initial',
+    height: '15rem',
+    lineHeight: 'initial',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    padding: '1rem',
+    width: '15rem',
+    zIndex: '1000'
+  },
+  character: {
+    fontSize: '5rem',
+    textAlign: 'center'
+  },
+  definitions: {
+    paddingTop: '1rem'
+  },
+  pronunciation: {
+    fontWeight: 'bold' 
+  },
+  list: {
+    listStyleType: 'decimal',
+    marginLeft: '2rem',
+  }
 };
 
 function fetchCharacter (character, setCharacterData) {
   chrome.runtime.sendMessage({ type: 'query', payload: character}, (res) => {
+    console.log(res);
     setCharacterData(res);
   });
 }
@@ -51,7 +50,7 @@ const CharacterInfo = ({character}) => {
   const [popperElem, setPopperElem] = useState(null);
   const [arrowElem, setArrowElem] = useState(null);
 
-  const { styles, attributes } = usePopper(refElem, popperElem, {
+  const popper = usePopper(refElem, popperElem, {
     modifiers: [{ name: 'arrow', options: { element: arrowElem } }],
     placement: 'top'
   });
@@ -86,18 +85,18 @@ const CharacterInfo = ({character}) => {
   // Rendering logic
   const definitions = [];
   if (characterData) {
-    characterData.forEach(pronunciation => {
-      definitions.push(<div style={pronunciationStyles}>{pronunciation.pinyin}</div>);
+    characterData.definitions.forEach(pronunciation => {
+      definitions.push(<div style={styles.pronunciation}>{pronunciation.pinyin}</div>);
       definitions.push(
-        <ol style={listStyles}>
+        <ol style={styles.list}>
           {pronunciation.definitions.map(def => <li>{def}</li>)}
         </ol>
       );
     });
   }
 
-  const popperStyles = {
-    ...styles.popper,
+  const newPopperStyles = {
+    ...popper.styles.popper,
     visibility: showing ? 'visible' : 'hidden',
     pointerEvents: showing ? 'auto' : 'hidden',
     opacity: showing ? '1' : '0',
@@ -119,17 +118,17 @@ const CharacterInfo = ({character}) => {
           onMouseOver={onMouseOver} 
           onMouseLeave={onMouseLeave}
           ref={setPopperElem} 
-          style={popperStyles}
-          {...attributes.popper}>
-          <div style={containerStyles}>
-            <div className="character-info" style={characterStyles}>
+          style={newPopperStyles}
+          {...popper.attributes}>
+          <div style={styles.container}>
+            <div className={'character-info'} style={styles.character}>
               {character}
             </div>
-            <div style={definitionStyles}>
+            <div style={styles.definition}>
               {definitions}
             </div>
           </div>
-          <div ref={setArrowElem} style={styles.arrow} />
+          <div ref={setArrowElem} style={popper.styles.arrow} />
         </div>,
         document.body
       )}

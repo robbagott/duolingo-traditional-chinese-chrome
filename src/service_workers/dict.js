@@ -35,8 +35,10 @@ async function initializeDb() {
       upgrade: (db, oldVersion, newVersion, transaction) => {
         console.log('upgrading');
         const ceStore = db.createObjectStore(cedictTable, { keyPath: 'key' });
-        db.createObjectStore(mmhTable, { keyPath: 'character' });
         ceStore.createIndex('traditional', 'traditional');
+
+        const mmhStore = db.createObjectStore(mmhTable, { keyPath: 'character' });
+        mmhStore.createIndex('character', 'character');
         upgraded = true;
       },
       blocked: () => {
@@ -93,8 +95,16 @@ function listen(db) {
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     console.log('received request', req, sender);
     if (req.type === 'query') {
-      db.getAllFromIndex('cedict', 'traditional', req.payload).then(res => {
-        console.log('found character info', res);
+      new Promise(async (resolve, reject) => {
+        const cedictInfo = await db.getAllFromIndex(cedictTable, 'traditional', req.payload);
+        const mmhInfo = await db.getFromIndex(mmhTable, 'character', req.payload);
+        let res = {};
+        res = {
+          definitions: cedictInfo
+        };
+        res.extended = mmhInfo;
+        resolve(res);
+      }).then(res => {
         sendResponse(res);
       });
       return true;
