@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDom from 'react-dom';
 import { usePopper } from 'react-popper';
-import { stripIdsChars } from '../util.js';
+import { fetchCharacter, stripIdsChars } from '../util.js';
 
 const styles = {
   container: {
@@ -37,20 +37,17 @@ const styles = {
     borderBottom: '0.06rem solid #e5e5e5',
     margin: '1rem'
   },
-  compSection: {
+  tabbed: {
     marginLeft: '1rem'
   }
 };
 
-function fetchCharacter (character, setCharacterData) {
-  chrome.runtime.sendMessage({ type: 'query', payload: character}, (res) => {
-    console.log(res);
-    setCharacterData(res);
-  });
-}
+
 
 const CharacterInfo = ({character}) => {
+  // State
   const [data, setData] = useState(null);
+  const [decomp, setDecomp] = useState(null);
   const [hideDelayTimeout, setHideDelayTimeout] = useState(null);
   const [showDelayTimeout, setShowDelayTimeout] = useState(null);
   const [showing, setShowing] = useState(false);
@@ -62,6 +59,30 @@ const CharacterInfo = ({character}) => {
     modifiers: [{ name: 'arrow', options: { element: arrowElem } }],
     placement: 'top'
   });
+
+  // Callbacks
+  const fetchData = () => {
+    return fetchCharacter(character).then(res => {
+      setData(res);
+      return res;
+    }).catch(err => console.error(err));
+  }
+
+  const fetchDecompData = (newData) => {
+    // Retrieve decomposition character data.
+    const decomp = newData?.extended?.decomposition;
+    if (decomp) {
+      const decompChars = stripIdsChars(decomp).split(''); 
+      let fetches = decompChars.map(c => fetchCharacter(c));
+      Promise.all(fetches).then(results => {
+        let decompData = {};
+        results.forEach((res, i) => {
+          decompData[decompChars[i]] = res;
+        });
+        setDecomp(decompData);
+      }).catch(err => {console.log(err); fetchDecompData(newData);});
+    }
+  }
 
   const onMouseLeave = useCallback(() => {
     const hideDelayTimeout = setTimeout(() => {
@@ -83,7 +104,7 @@ const CharacterInfo = ({character}) => {
     setShowDelayTimeout(newShowDelayTimeout);
 
     if (!data) {
-      fetchCharacter(character, setData)
+      fetchData().then(res => fetchDecompData(res));
     }
     if (hideDelayTimeout) {
       clearTimeout(hideDelayTimeout);
@@ -91,22 +112,39 @@ const CharacterInfo = ({character}) => {
     }
   }, [hideDelayTimeout, showDelayTimeout]);
 
-  // Rendering logic
-  let definitions = [];
-  let comp = [];
-  if (data) {
-    definitions = (
-      data.definitions.map(pronunciation => (
-        <>
-          <div style={styles.section}>{pronunciation.pinyin}</div>
-          <ol style={styles.list}>
-            {pronunciation.definitions.map(def => <li>{def}</li>)}
-          </ol>
-        </>
-      ))
-    );
+  // Render logic
+  const renderDefinitions = () => {
+    if (data) {
+      if (data.definitions?.length) {
+        return (
+          data.definitions.map(pronunciation => (
+            <>
+              <div style={styles.section}>{pronunciation.pinyin}</div>
+              <ol style={styles.list}>
+                {pronunciation.definitions.map(def => <li>{def}</li>)}
+              </ol>
+            </>
+          ))
+        );
+      }
+      if (data.extended) {
+        const definitions = data.extended.definition.split(';');
+        return (
+          <>
+            <div style={styles.section}>{data.extended.pinyin[0]}</div>
+            <ol style={styles.list}>
+              {definitions ? definitions.map(def => <li>{def}</li>) : null}
+            </ol>
+          </>
+        );
+      }
+    }
+    return null;
+  };
 
-    if (data.extended) {
+  const renderComp = () => {
+    let comp = [];
+    if (data?.extended) {
       comp.push(<div style={styles.separator}></div>);
       const eData = data.extended.etymology;
       comp.push(<div style={styles.section}>Composition</div>);
@@ -114,21 +152,32 @@ const CharacterInfo = ({character}) => {
       const decompStr = stripIdsChars(data.extended.decomposition);
       let chars = decompStr.split('');
       const compSection = (
-        <div style={styles.compSection}>
+        <div style={styles.tabbed}>
           {
-            chars.map(c => (
-              <>
-                {eData && eData.semantic === c ? <div>{c} (semantic)</div> : null} 
-                {eData && eData.phonetic === c ? <div>{c} (phonetic)</div> : null} 
-                {!eData || (eData.phonetic !== c && eData.semantic !== c) ? <div>{c}</div> : null} 
-              </>
-            ))
+            chars.map(c => {
+              let type = '';
+              if (eData?.semantic === c) {
+                type = ' (semantic)';
+              } else if (eData?.phonetic === c) {
+                type = ' (phonetic)';
+              } else {
+                type = '';
+              }
+
+              const details = decomp ? decomp[c] : null;
+              let pinyin = details?.definitions?.length ? details.definitions[0]?.pinyin : null;
+              pinyin = pinyin || details?.extended?.pinyin[0];
+              let definition = details?.definitions?.length ? details.definitions[0].definitions[0] : null;
+              definition = definition || details?.extended?.definition;
+              return <div>{`${c}${type}: ${pinyin} ${definition}`}</div>;
+            })
           }
         </div>
       );
       comp.push(compSection);
     }
-  }
+    return comp;
+  };
 
   const newPopperStyles = {
     ...popper.styles.popper,
@@ -161,9 +210,9 @@ const CharacterInfo = ({character}) => {
             </div>
             <div style={styles.definition}>
             <div style={styles.separator}></div>
-              {definitions}
+              {renderDefinitions()}
             </div>
-            {comp}
+            {renderComp()}
           </div>
           <div ref={setArrowElem} style={popper.styles.arrow} />
         </div>,

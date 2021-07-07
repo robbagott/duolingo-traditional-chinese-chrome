@@ -1,4 +1,5 @@
 export {
+  fetchCharacter,
   getAbsoluteOffset,
   getLeafNodes,
   includesChinese,
@@ -43,3 +44,14 @@ function stripIdsChars(input) {
   return input.replace(/[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]/g, '');
 }
 
+function fetchCharacter (character) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: 'query', payload: character}, res => {
+      if (res) {
+        resolve(res);
+      } else {
+        reject(chrome.runtime.lastError);
+      }
+    });
+  });
+}

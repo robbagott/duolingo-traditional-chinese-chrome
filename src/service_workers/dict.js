@@ -99,6 +99,14 @@ function listen(db) {
         const cedictInfo = await db.getAllFromIndex(cedictTable, 'traditional', req.payload);
         const mmhInfo = await db.getFromIndex(mmhTable, 'character', req.payload);
         let res = {};
+        cedictInfo.sort((a, b) => {
+          if (a.pinyin < b.pinyin) {
+            return 1;
+          } else {
+            return -1;
+          }
+        });
+        console.log(cedictInfo);
         res = {
           definitions: cedictInfo
         };
