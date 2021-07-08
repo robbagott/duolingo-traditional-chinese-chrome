@@ -148,6 +148,9 @@ const CharacterInfo = ({character}) => {
       comp.push(<div style={styles.separator}></div>);
       const eData = data.extended.etymology;
       comp.push(<div style={styles.section}>Composition</div>);
+      if (eData?.hint) {
+        comp.push(<div style={styles.tabbed}>{eData.hint}</div>);
+      }
 
       const decompStr = stripIdsChars(data.extended.decomposition);
       let chars = decompStr.split('');
